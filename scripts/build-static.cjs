@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
-const sourceDir = path.join(root, "standalone");
+const standaloneDir = path.join(root, "standalone");
+const sourceDir = fs.existsSync(standaloneDir) ? standaloneDir : root;
 const outputDir = path.join(root, "dist");
 const files = ["index.html", "styles.css", "app.js"];
 
@@ -13,4 +14,4 @@ for (const file of files) {
   fs.copyFileSync(path.join(sourceDir, file), path.join(outputDir, file));
 }
 
-console.log(`Built static MIXXO app to ${outputDir}`);
+console.log(`Built static MIXXO app from ${sourceDir} to ${outputDir}`);
