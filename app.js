@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
 const FACTORY_FILTERS = ["자싱", "광저우지사", "닝보"];
 const VIRAL_DEFAULT_THRESHOLD = 150000;
 const VIRAL_DEFAULT_SCORE = 5;
+const INITIAL_TABLE_ROW_LIMIT = 250;
 
 const SAMPLE_ROWS = [
   ["2026-W16", "MIWOWF502B", "프릴 롱 레이어드 원피스", "자싱", "MINT", "090", "OFFLINE", 24, 80, 41, 18, 18, 1438200, "2026-04-13", 0, "MIW25W501", 9, 118, 78, 72, 84, 80, 86, 185000, 12400, 410, 260, 4, 78, "Y", 10, 10, 120],
@@ -111,7 +112,12 @@ const app = document.querySelector("#app");
 const DEFAULT_ROWS = Array.isArray(window.MIXXO_BI_ROWS) && window.MIXXO_BI_ROWS.length
   ? window.MIXXO_BI_ROWS
   : SAMPLE_ROWS;
-const DEFAULT_FILE_NAME = window.MIXXO_BI_SOURCE_NAME || "샘플 데이터";
+function cleanDataSourceName(value) {
+  const name = String(value || "").trim();
+  return !name || /\?{2,}/.test(name) ? "BI 판매 데이터" : name;
+}
+
+const DEFAULT_FILE_NAME = cleanDataSourceName(window.MIXXO_BI_SOURCE_NAME || "샘플 데이터");
 let rows = DEFAULT_ROWS;
 let settings = { ...DEFAULT_SETTINGS };
 let fileName = DEFAULT_FILE_NAME;
@@ -1250,6 +1256,8 @@ function render() {
   const groups = selectedFactory === "전체"
     ? allGroups
     : allGroups.filter((group) => group.factoryName === selectedFactory);
+  const visibleGroups = groups.slice(0, INITIAL_TABLE_ROW_LIMIT);
+  const hiddenGroupCount = Math.max(0, groups.length - visibleGroups.length);
   const totalRecommendation = groups.reduce((sum, group) => sum + group.totalRecommendation, 0);
   const nextWeekCut = groups.reduce((sum, group) => sum + group.nextWeekCutQty, 0);
   const materialPrep = groups.reduce((sum, group) => sum + group.materialPrepQty, 0);
@@ -1299,7 +1307,7 @@ function render() {
         <button class="tab-button" type="button">조정요청 <b>${highRiskCount}</b></button>
       </div>
       <div class="action-row">
-        <span>${groups.length}건</span>
+        <span>${groups.length}건${hiddenGroupCount ? ` · 화면 ${visibleGroups.length}건` : ""}</span>
         <button class="primary-button" type="button">+ 스타일 추가</button>
         <button class="secondary-button template-copy-button" type="button">엑셀 다운로드</button>
         <button class="secondary-button refresh-copy-button" type="button">재조회</button>
@@ -1317,7 +1325,7 @@ function render() {
       <input class="search-input" type="search" placeholder="아이템 또는 스타일코드 검색" />
     </section>
 
-    <section class="decision-section">
+    <section class="decision-section" id="reorderTable">
       <div class="table-scroll">
         <table class="mes-table">
           <thead>
@@ -1327,7 +1335,7 @@ function render() {
               <th>주판율</th><th>바이럴배수</th><th>가용재고</th><th>판매기간</th><th>바이럴지수</th><th>MD조정</th>
             </tr>
           </thead>
-          <tbody>${renderDashboardRows(groups, allGroups)}</tbody>
+          <tbody>${renderDashboardRows(visibleGroups, allGroups)}</tbody>
         </table>
       </div>
     </section>
